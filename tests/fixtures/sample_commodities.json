@@ -1,0 +1,10 @@
+{
+  "auctions": [
+    {"id": 1, "item": {"id": 210796}, "unit_price": 15000, "quantity": 200},
+    {"id": 2, "item": {"id": 210796}, "unit_price": 14500, "quantity": 100},
+    {"id": 3, "item": {"id": 210796}, "unit_price": 16000, "quantity": 50},
+    {"id": 4, "item": {"id": 210799}, "unit_price": 25000, "quantity": 80},
+    {"id": 5, "item": {"id": 210799}, "unit_price": 24000, "quantity": 120},
+    {"id": 6, "item": {"id": 999999}, "unit_price": 500, "quantity": 10000}
+  ]
+}
