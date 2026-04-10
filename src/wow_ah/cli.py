@@ -7,7 +7,7 @@ from wow_ah.adapters.blizzard_adapter import BlizzardAdapter
 from wow_ah.adapters.sqlite_adapter import SQLiteAdapter
 from wow_ah.core.auth import TokenManager
 from wow_ah.core.config import get_settings
-from wow_ah.export.csv_export import snapshots_to_csv, spreads_to_csv
+from wow_ah.export.csv_export import snapshots_to_csv
 from wow_ah.export.formatters import format_copper, format_spreads_table, format_trends_table
 from wow_ah.recipes.loader import get_watchlist_item_ids, load_recipes
 from wow_ah.schemas.recipes import Recipe
@@ -55,14 +55,11 @@ def fetch():
     recipes = _get_recipes()
     watchlist = get_watchlist_item_ids(recipes)
 
-    # Check Last-Modified to avoid duplicate writes
-    last_ts = store.get_last_fetch_timestamp()
-
     service = FetchService(market_data=market, price_store=store, watchlist=watchlist)
     count = service.fetch()
 
-    if count == 0 and last_ts:
-        typer.echo("No new data (API not yet refreshed). Skipped.")
+    if count == 0:
+        typer.echo("No new data (already fetched this hour). Skipped.")
     else:
         typer.echo(f"Saved {count} price snapshots.")
 

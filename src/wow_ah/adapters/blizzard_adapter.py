@@ -61,16 +61,25 @@ class BlizzardAdapter:
 
     def get_item(self, item_id: int) -> ItemInfo:
         token = self._token_manager.get_token()
-        resp = httpx.get(
-            f"{self._base_url}/data/wow/item/{item_id}",
-            params={
-                "namespace": f"static-{self._region}",
-                "locale": "en_US",
-            },
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=30,
-        )
-        resp.raise_for_status()
+        try:
+            resp = httpx.get(
+                f"{self._base_url}/data/wow/item/{item_id}",
+                params={
+                    "namespace": f"static-{self._region}",
+                    "locale": "en_US",
+                },
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=30,
+            )
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise APIError(
+                APIErrorMessages.FETCH_FAILED.format(status_code=e.response.status_code)
+            ) from e
+        except httpx.HTTPError as e:
+            raise APIError(
+                APIErrorMessages.FETCH_FAILED.format(status_code="connection_error")
+            ) from e
         data = resp.json()
         return ItemInfo(
             item_id=data["id"],

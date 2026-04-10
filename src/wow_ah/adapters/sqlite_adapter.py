@@ -58,30 +58,34 @@ class SQLiteAdapter:
 
     def save_snapshots(self, snapshots: list[PriceSnapshot]) -> None:
         conn = self._connect()
-        conn.executemany(
-            """INSERT INTO price_snapshots
-               (item_id, timestamp, min_price, median_price, mean_price, total_quantity, num_auctions)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            [
-                (s.item_id, s.timestamp, s.min_price, s.median_price, s.mean_price, s.total_quantity, s.num_auctions)
-                for s in snapshots
-            ],
-        )
-        conn.commit()
-        conn.close()
+        try:
+            conn.executemany(
+                """INSERT INTO price_snapshots
+                   (item_id, timestamp, min_price, median_price, mean_price, total_quantity, num_auctions)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                [
+                    (s.item_id, s.timestamp, s.min_price, s.median_price, s.mean_price, s.total_quantity, s.num_auctions)
+                    for s in snapshots
+                ],
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
     def get_price_history(
         self, item_id: int, start: str, end: str
     ) -> list[PriceSnapshot]:
         conn = self._connect()
-        rows = conn.execute(
-            """SELECT item_id, timestamp, min_price, median_price, mean_price, total_quantity, num_auctions
-               FROM price_snapshots
-               WHERE item_id = ? AND timestamp >= ? AND timestamp <= ?
-               ORDER BY timestamp""",
-            (item_id, start, end),
-        ).fetchall()
-        conn.close()
+        try:
+            rows = conn.execute(
+                """SELECT item_id, timestamp, min_price, median_price, mean_price, total_quantity, num_auctions
+                   FROM price_snapshots
+                   WHERE item_id = ? AND timestamp >= ? AND timestamp <= ?
+                   ORDER BY timestamp""",
+                (item_id, start, end),
+            ).fetchall()
+        finally:
+            conn.close()
         return [
             PriceSnapshot(
                 item_id=r["item_id"],
@@ -100,19 +104,21 @@ class SQLiteAdapter:
             return {}
         conn = self._connect()
         placeholders = ",".join("?" for _ in item_ids)
-        rows = conn.execute(
-            f"""SELECT p.item_id, p.timestamp, p.min_price, p.median_price,
-                       p.mean_price, p.total_quantity, p.num_auctions
-                FROM price_snapshots p
-                INNER JOIN (
-                    SELECT item_id, MAX(timestamp) as max_ts
-                    FROM price_snapshots
-                    WHERE item_id IN ({placeholders})
-                    GROUP BY item_id
-                ) latest ON p.item_id = latest.item_id AND p.timestamp = latest.max_ts""",
-            item_ids,
-        ).fetchall()
-        conn.close()
+        try:
+            rows = conn.execute(
+                f"""SELECT p.item_id, p.timestamp, p.min_price, p.median_price,
+                           p.mean_price, p.total_quantity, p.num_auctions
+                    FROM price_snapshots p
+                    INNER JOIN (
+                        SELECT item_id, MAX(timestamp) as max_ts
+                        FROM price_snapshots
+                        WHERE item_id IN ({placeholders})
+                        GROUP BY item_id
+                    ) latest ON p.item_id = latest.item_id AND p.timestamp = latest.max_ts""",
+                item_ids,
+            ).fetchall()
+        finally:
+            conn.close()
         return {
             r["item_id"]: PriceSnapshot(
                 item_id=r["item_id"],
@@ -128,8 +134,10 @@ class SQLiteAdapter:
 
     def get_last_fetch_timestamp(self) -> str | None:
         conn = self._connect()
-        row = conn.execute(
-            "SELECT MAX(timestamp) as ts FROM price_snapshots"
-        ).fetchone()
-        conn.close()
+        try:
+            row = conn.execute(
+                "SELECT MAX(timestamp) as ts FROM price_snapshots"
+            ).fetchone()
+        finally:
+            conn.close()
         return row["ts"] if row and row["ts"] else None

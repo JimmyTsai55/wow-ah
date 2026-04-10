@@ -5,10 +5,12 @@ from wow_ah.schemas.prices import SpreadResult, TrendResult
 
 def format_copper(copper: int) -> str:
     """Format copper value as WoW gold/silver/copper string."""
+    sign = "-" if copper < 0 else ""
+    copper = abs(copper)
     gold = copper // 10000
     silver = (copper % 10000) // 100
     remainder = copper % 100
-    return f"{gold}g {silver}s {remainder}c"
+    return f"{sign}{gold}g {silver}s {remainder}c"
 
 
 def format_spreads_table(spreads: list[SpreadResult]) -> str:
