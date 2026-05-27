@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MidnightCookingDatabase Version="12.0">
+    
+    <Materials>
+        <Category Name="Meat_And_Proteins">
+            <Item ID="211001" Name="大塊豬肉 (Practically Pork)" Type="Meat" Source="Beast Drop"/>
+            <Item ID="211002" Name="植物蛋白 (Plant Protein)" Type="Plant" Source="Mob Drop / Gathering"/>
+        </Category>
+        
+        <Category Name="Processed_Fish">
+            <Item ID="214001" Name="薩拉斯魚片 (Thalassian Fillet)" Type="Fish_Processed" Source="Crafted from Basic Fish"/>
+            <Item ID="214002" Name="特級虛無魚片 (Null Voidfish Fillet)" Type="Fish_Processed" Source="Crafted from Rare Fish"/>
+        </Category>
+        
+        <Category Name="Herbal_Additives">
+            <Item ID="213001" Name="血棘 (Sanguithorn)" Type="Herb" Source="Herbalism" />
+            <Item ID="213002" Name="銀白葉 (Argentleaf)" Type="Herb" Source="Herbalism" />
+            <Item ID="213003" Name="艾澤根 (Azeroot)" Type="Herb" Source="Herbalism" />
+            <Item ID="213004" Name="瑪那百合 (Mana Lily)" Type="Herb" Source="Herbalism" />
+        </Category>
+    </Materials>
+
+    <Recipes>
+        
+        <Category Type="Raid_Feast" BuffType="Highest_Primary_Stat">
+            <Recipe ID="300001" Name="銀月大遊行 (Silvermoon Parade)">
+                <Reagents>
+                    <Reagent Name="大塊豬肉" Amount="20" />
+                    <Reagent Name="薩拉斯魚片" Amount="20" />
+                    <Reagent Name="血棘" Amount="10" />
+                </Reagents>
+            </Recipe>
+        </Category>
+
+        <Category Type="Personal_Primary" BuffType="Primary_Stat_Combat">
+            <Recipe ID="301001" Name="皇家烤肉 (Royal Roast)">
+                <Reagents>
+                    <Reagent Name="大塊豬肉" Amount="5" />
+                </Reagents>
+            </Recipe>
+        </Category>
+
+        <Category Type="Personal_Secondary" BuffType="Haste">
+            <Recipe ID="302001" Name="虛無與空洞拼盤 (Null and Void Plate)" SubType="Meat_Base">
+                <Reagents>
+                    <Reagent Name="特級虛無魚片" Amount="3" />
+                    <Reagent Name="大塊豬肉" Amount="2" />
+                </Reagents>
+            </Recipe>
+            <Recipe ID="302002" Name="魔化親吻魚排 (Fel-Kissed Filet)" SubType="Meat_Base">
+                <Reagents>
+                    <Reagent Name="薩拉斯魚片" Amount="5" />
+                </Reagents>
+            </Recipe>
+            <Recipe ID="302003" Name="豐盛植物濃湯 (Hearty Plant Stew)" SubType="Plant_Base">
+                <Reagents>
+                    <Reagent Name="植物蛋白" Amount="5" />
+                </Reagents>
+            </Recipe>
+        </Category>
+
+        <Category Type="Profession_Buff" BuffType="Gathering_And_Crafting">
+            <Recipe ID="303001" Name="銀白葉茶 (Argentleaf Tea)">
+                <Reagents>
+                    <Reagent Name="銀白葉" Amount="5" />
+                </Reagents>
+            </Recipe>
+            <Recipe ID="303002" Name="血棘茶 (Sanguithorn Tea)">
+                <Reagents>
+                    <Reagent Name="血棘" Amount="5" />
+                </Reagents>
+            </Recipe>
+            <Recipe ID="303003" Name="艾澤根茶 (Azeroot Tea)">
+                <Reagents>
+                    <Reagent Name="艾澤根" Amount="5" />
+                </Reagents>
+            </Recipe>
+        </Category>
+
+    </Recipes>
+</MidnightCookingDatabase>
