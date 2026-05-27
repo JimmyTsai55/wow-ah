@@ -41,6 +41,33 @@ def load_recipes(file_path: str) -> list[Recipe]:
     return recipes
 
 
+def load_all_recipes(data_dir: str | None = None) -> list[Recipe]:
+    """Load and merge recipes from all JSON files in the data directory."""
+    if data_dir is None:
+        data_dir = str(Path(__file__).parent / "data")
+
+    data_path = Path(data_dir)
+    if not data_path.is_dir():
+        raise DataError(
+            DataErrorMessages.RECIPE_FILE_INVALID.format(
+                error=f"Recipe data directory not found: {data_dir}"
+            )
+        )
+
+    json_files = sorted(data_path.glob("*.json"))
+    if not json_files:
+        raise DataError(
+            DataErrorMessages.RECIPE_FILE_INVALID.format(
+                error=f"No recipe files found in: {data_dir}"
+            )
+        )
+
+    all_recipes: list[Recipe] = []
+    for json_file in json_files:
+        all_recipes.extend(load_recipes(str(json_file)))
+    return all_recipes
+
+
 def get_watchlist_item_ids(recipes: list[Recipe]) -> set[int]:
     """Derive the set of item IDs to track from recipe definitions."""
     ids: set[int] = set()

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from wow_ah.recipes.loader import load_recipes, get_watchlist_item_ids
+from wow_ah.recipes.loader import load_recipes, load_all_recipes, get_watchlist_item_ids
 from wow_ah.exceptions.base import DataError
 
 
@@ -77,3 +77,54 @@ def test_get_watchlist_item_ids(tmp_path):
     recipes = load_recipes(str(recipe_file))
     ids = get_watchlist_item_ids(recipes)
     assert ids == {1, 2, 3, 100, 200}
+
+
+def _write_recipe_file(path, recipes_data):
+    path.write_text(json.dumps({"recipes": recipes_data}))
+
+
+def test_load_all_recipes_merges_files(tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    _write_recipe_file(data_dir / "alchemy.json", [
+        {"name": "Flask A", "output_item_id": 100, "output_quantity": 1,
+         "reagents": [{"item_id": 1, "name": "Herb", "quantity": 5}]}
+    ])
+    _write_recipe_file(data_dir / "cooking.json", [
+        {"name": "Food B", "output_item_id": 200, "output_quantity": 1,
+         "reagents": [{"item_id": 2, "name": "Meat", "quantity": 3}]}
+    ])
+
+    recipes = load_all_recipes(str(data_dir))
+    assert len(recipes) == 2
+    names = {r.name for r in recipes}
+    assert names == {"Flask A", "Food B"}
+
+
+def test_load_all_recipes_empty_dir(tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    with pytest.raises(DataError):
+        load_all_recipes(str(data_dir))
+
+
+def test_load_all_recipes_invalid_dir():
+    with pytest.raises(DataError):
+        load_all_recipes("/nonexistent/dir")
+
+
+def test_watchlist_spans_professions(tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    _write_recipe_file(data_dir / "alchemy.json", [
+        {"name": "Flask", "output_item_id": 100, "output_quantity": 1,
+         "reagents": [{"item_id": 1, "name": "Herb", "quantity": 5}]}
+    ])
+    _write_recipe_file(data_dir / "cooking.json", [
+        {"name": "Food", "output_item_id": 200, "output_quantity": 1,
+         "reagents": [{"item_id": 2, "name": "Meat", "quantity": 3}]}
+    ])
+
+    recipes = load_all_recipes(str(data_dir))
+    ids = get_watchlist_item_ids(recipes)
+    assert ids == {1, 2, 100, 200}

@@ -9,7 +9,7 @@ from wow_ah.core.auth import TokenManager
 from wow_ah.core.config import get_settings
 from wow_ah.export.csv_export import snapshots_to_csv
 from wow_ah.export.formatters import format_copper, format_spreads_table, format_trends_table
-from wow_ah.recipes.loader import get_watchlist_item_ids, load_recipes
+from wow_ah.recipes.loader import get_watchlist_item_ids, load_all_recipes
 from wow_ah.schemas.recipes import Recipe
 from wow_ah.services.fetch_service import FetchService
 from wow_ah.services.spread_service import SpreadService
@@ -19,16 +19,13 @@ app = typer.Typer(help="WoW Auction House arbitrage analysis tool")
 recipes_app = typer.Typer(help="Manage recipe definitions")
 app.add_typer(recipes_app, name="recipes")
 
-_RECIPE_PATH = Path(__file__).parent / "recipes" / "data" / "alchemy.json"
-
-
 def _get_store() -> SQLiteAdapter:
     settings = get_settings()
     return SQLiteAdapter(settings.db_path)
 
 
 def _get_recipes() -> list[Recipe]:
-    return load_recipes(str(_RECIPE_PATH))
+    return load_all_recipes()
 
 
 def _get_item_names(recipes: list[Recipe]) -> dict[int, str]:
