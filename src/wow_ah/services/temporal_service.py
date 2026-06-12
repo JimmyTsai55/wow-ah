@@ -1,6 +1,9 @@
+import logging
 import statistics
 from datetime import datetime, timedelta, timezone
 
+from wow_ah.exceptions.base import DataError
+from wow_ah.exceptions.messages import DataErrorMessages
 from wow_ah.protocols.price_store import PriceStoreProtocol
 from wow_ah.schemas.prices import PriceSnapshot, TrendResult
 
@@ -8,6 +11,8 @@ MIN_DATA_POINTS = 24  # need at least 24h of data
 STD_MULTIPLIER = 1.5
 BUY_PERCENTILE = 10
 SELL_PERCENTILE = 90
+
+logger = logging.getLogger(__name__)
 
 
 def _ma(prices: list[int], count: int) -> float:
@@ -29,7 +34,12 @@ class TemporalService:
         history_hours: int = 168,  # 7 days default
     ) -> list[TrendResult]:
         """Analyze price trends for the given items."""
-        now_dt = datetime.fromisoformat(now.replace("Z", "+00:00"))
+        try:
+            now_dt = datetime.fromisoformat(now.replace("Z", "+00:00"))
+        except ValueError as e:
+            raise DataError(
+                DataErrorMessages.INVALID_TIMESTAMP.format(timestamp=now)
+            ) from e
         start_dt = now_dt - timedelta(hours=history_hours)
         start = start_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -37,6 +47,10 @@ class TemporalService:
         for item_id in item_ids:
             history = self._store.get_price_history(item_id, start, now)
             if len(history) < MIN_DATA_POINTS:
+                logger.warning(
+                    "Skipping item %d: only %dh of history, need at least %dh",
+                    item_id, len(history), MIN_DATA_POINTS,
+                )
                 continue
 
             prices = [s.min_price for s in history]

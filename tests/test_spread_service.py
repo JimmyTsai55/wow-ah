@@ -1,8 +1,11 @@
+import pytest
+
+from wow_ah.exceptions.base import DataError
 from wow_ah.schemas.prices import PriceSnapshot
 from wow_ah.schemas.recipes import Recipe, Reagent
 from wow_ah.services.spread_service import SpreadService
 
-AH_FEE_RATE = 0.05
+AH_FEE_PCT = 5
 
 
 class FakeStore:
@@ -51,7 +54,7 @@ def test_spread_profitable():
     assert r.recipe_name == "Test Flask"
     assert r.material_cost == 10 * 100 + 5 * 200  # 2000
     assert r.product_price == 5000
-    expected_profit = 5000 - int(5000 * AH_FEE_RATE) - 2000  # 5000 - 250 - 2000 = 2750
+    expected_profit = 5000 - (5000 * AH_FEE_PCT // 100) - 2000  # 5000 - 250 - 2000 = 2750
     assert r.profit == expected_profit
     assert r.margin_pct == expected_profit / 2000 * 100
 
@@ -95,6 +98,45 @@ def test_spread_missing_price_skips_recipe():
     service = SpreadService(price_store=store)
     results = service.analyze(recipes)
     assert len(results) == 0
+
+
+def test_spread_zero_material_cost_raises_data_error():
+    store = FakeStore({
+        1: _snap(1, 0),  # reagent has zero price (stale or bad data)
+        100: _snap(100, 5000),
+    })
+    recipes = [
+        Recipe(
+            name="Zero Cost Bug",
+            output_item_id=100,
+            output_quantity=1,
+            reagents=[Reagent(item_id=1, name="Free Herb", quantity=10)],
+        )
+    ]
+    service = SpreadService(price_store=store)
+    with pytest.raises(DataError):
+        service.analyze(recipes)
+
+
+def test_spread_logs_warning_when_skipping_missing_price(caplog):
+    import logging
+    store = FakeStore({1: _snap(1, 100), 100: _snap(100, 5000)})  # item 2 missing
+    recipes = [
+        Recipe(
+            name="Skipped Recipe",
+            output_item_id=100,
+            output_quantity=1,
+            reagents=[
+                Reagent(item_id=1, name="Herb A", quantity=10),
+                Reagent(item_id=2, name="Herb B", quantity=5),
+            ],
+        )
+    ]
+    service = SpreadService(price_store=store)
+    with caplog.at_level(logging.WARNING, logger="wow_ah.services.spread_service"):
+        results = service.analyze(recipes)
+    assert results == []
+    assert any("Skipped Recipe" in r.message for r in caplog.records)
 
 
 def test_spread_sorted_by_margin():

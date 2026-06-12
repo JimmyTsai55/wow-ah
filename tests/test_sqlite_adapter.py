@@ -1,4 +1,7 @@
+import pytest
+
 from wow_ah.adapters.sqlite_adapter import SQLiteAdapter
+from wow_ah.exceptions.base import DataError
 from wow_ah.schemas.prices import PriceSnapshot
 
 
@@ -73,3 +76,17 @@ def test_get_latest_prices_missing_item(tmp_db):
     adapter = SQLiteAdapter(tmp_db)
     latest = adapter.get_latest_prices([999])
     assert 999 not in latest
+
+
+def test_init_invalid_path_raises_data_error():
+    with pytest.raises(DataError):
+        SQLiteAdapter("/dev/null/cannot_create.db")
+
+
+def test_save_after_path_broken_raises_data_error(tmp_db):
+    adapter = SQLiteAdapter(tmp_db)
+    adapter._db_path = "/dev/null/nope.db"
+    with pytest.raises(DataError):
+        adapter.save_snapshots([
+            PriceSnapshot(item_id=1, timestamp="2026-04-10T14:00:00Z", min_price=100)
+        ])

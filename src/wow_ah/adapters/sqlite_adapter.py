@@ -1,5 +1,7 @@
 import sqlite3
 
+from wow_ah.exceptions.base import DataError
+from wow_ah.exceptions.messages import DataErrorMessages
 from wow_ah.schemas.prices import PriceSnapshot
 
 _SCHEMA = """
@@ -52,40 +54,55 @@ class SQLiteAdapter:
         return conn
 
     def _init_db(self) -> None:
-        conn = self._connect()
-        conn.executescript(_SCHEMA)
-        conn.close()
+        try:
+            conn = self._connect()
+            conn.executescript(_SCHEMA)
+            conn.close()
+        except sqlite3.Error as e:
+            raise DataError(
+                DataErrorMessages.STORAGE_ERROR.format(operation="init_db", error=e)
+            ) from e
 
     def save_snapshots(self, snapshots: list[PriceSnapshot]) -> None:
-        conn = self._connect()
         try:
-            conn.executemany(
-                """INSERT INTO price_snapshots
-                   (item_id, timestamp, min_price, median_price, mean_price, total_quantity, num_auctions)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                [
-                    (s.item_id, s.timestamp, s.min_price, s.median_price, s.mean_price, s.total_quantity, s.num_auctions)
-                    for s in snapshots
-                ],
-            )
-            conn.commit()
-        finally:
-            conn.close()
+            conn = self._connect()
+            try:
+                conn.executemany(
+                    """INSERT INTO price_snapshots
+                       (item_id, timestamp, min_price, median_price, mean_price, total_quantity, num_auctions)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    [
+                        (s.item_id, s.timestamp, s.min_price, s.median_price, s.mean_price, s.total_quantity, s.num_auctions)
+                        for s in snapshots
+                    ],
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except sqlite3.Error as e:
+            raise DataError(
+                DataErrorMessages.STORAGE_ERROR.format(operation="save_snapshots", error=e)
+            ) from e
 
     def get_price_history(
         self, item_id: int, start: str, end: str
     ) -> list[PriceSnapshot]:
-        conn = self._connect()
         try:
-            rows = conn.execute(
-                """SELECT item_id, timestamp, min_price, median_price, mean_price, total_quantity, num_auctions
-                   FROM price_snapshots
-                   WHERE item_id = ? AND timestamp >= ? AND timestamp <= ?
-                   ORDER BY timestamp""",
-                (item_id, start, end),
-            ).fetchall()
-        finally:
-            conn.close()
+            conn = self._connect()
+            try:
+                rows = conn.execute(
+                    """SELECT item_id, timestamp, min_price, median_price, mean_price, total_quantity, num_auctions
+                       FROM price_snapshots
+                       WHERE item_id = ? AND timestamp >= ? AND timestamp <= ?
+                       ORDER BY timestamp""",
+                    (item_id, start, end),
+                ).fetchall()
+            finally:
+                conn.close()
+        except sqlite3.Error as e:
+            raise DataError(
+                DataErrorMessages.STORAGE_ERROR.format(operation="get_price_history", error=e)
+            ) from e
         return [
             PriceSnapshot(
                 item_id=r["item_id"],
@@ -102,23 +119,28 @@ class SQLiteAdapter:
     def get_latest_prices(self, item_ids: list[int]) -> dict[int, PriceSnapshot]:
         if not item_ids:
             return {}
-        conn = self._connect()
-        placeholders = ",".join("?" for _ in item_ids)
         try:
-            rows = conn.execute(
-                f"""SELECT p.item_id, p.timestamp, p.min_price, p.median_price,
-                           p.mean_price, p.total_quantity, p.num_auctions
-                    FROM price_snapshots p
-                    INNER JOIN (
-                        SELECT item_id, MAX(timestamp) as max_ts
-                        FROM price_snapshots
-                        WHERE item_id IN ({placeholders})
-                        GROUP BY item_id
-                    ) latest ON p.item_id = latest.item_id AND p.timestamp = latest.max_ts""",
-                item_ids,
-            ).fetchall()
-        finally:
-            conn.close()
+            conn = self._connect()
+            placeholders = ",".join("?" for _ in item_ids)
+            try:
+                rows = conn.execute(
+                    f"""SELECT p.item_id, p.timestamp, p.min_price, p.median_price,
+                               p.mean_price, p.total_quantity, p.num_auctions
+                        FROM price_snapshots p
+                        INNER JOIN (
+                            SELECT item_id, MAX(timestamp) as max_ts
+                            FROM price_snapshots
+                            WHERE item_id IN ({placeholders})
+                            GROUP BY item_id
+                        ) latest ON p.item_id = latest.item_id AND p.timestamp = latest.max_ts""",
+                    item_ids,
+                ).fetchall()
+            finally:
+                conn.close()
+        except sqlite3.Error as e:
+            raise DataError(
+                DataErrorMessages.STORAGE_ERROR.format(operation="get_latest_prices", error=e)
+            ) from e
         return {
             r["item_id"]: PriceSnapshot(
                 item_id=r["item_id"],
@@ -133,11 +155,16 @@ class SQLiteAdapter:
         }
 
     def get_last_fetch_timestamp(self) -> str | None:
-        conn = self._connect()
         try:
-            row = conn.execute(
-                "SELECT MAX(timestamp) as ts FROM price_snapshots"
-            ).fetchone()
-        finally:
-            conn.close()
+            conn = self._connect()
+            try:
+                row = conn.execute(
+                    "SELECT MAX(timestamp) as ts FROM price_snapshots"
+                ).fetchone()
+            finally:
+                conn.close()
+        except sqlite3.Error as e:
+            raise DataError(
+                DataErrorMessages.STORAGE_ERROR.format(operation="get_last_fetch_timestamp", error=e)
+            ) from e
         return row["ts"] if row and row["ts"] else None

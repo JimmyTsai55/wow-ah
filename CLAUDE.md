@@ -49,15 +49,21 @@ Services are tested by passing in `FakeMarketData` / `FakeStore` classes that sa
 
 - **Money is integer copper end-to-end.** Conversion to `Ng Xs Yc` happens only at display time via `format_copper` in [src/wow_ah/export/formatters.py](src/wow_ah/export/formatters.py). Never store or compute with floats for prices.
 - **Timestamps are ISO 8601 UTC strings** (`%Y-%m-%dT%H:%M:%SZ`) at storage and protocol boundaries. Services convert to/from `datetime` internally and always use `timezone.utc`.
-- **`FetchService.fetch()` is throttled** by hour: if the most recent snapshot timestamp falls in the current UTC hour, it returns 0 and writes nothing. Pass `skip_if_same_hour=False` to override.
+- **`FetchService.fetch()` is throttled** by hour: if the most recent snapshot timestamp falls in the current UTC hour, it writes nothing and returns a `FetchResult` with `skipped_throttle=True` (distinguishing throttling from a fetch that simply matched no watchlist items). Pass `skip_if_same_hour=False` to override.
 - **The watchlist is derived from recipes**, not configured separately. `get_watchlist_item_ids(recipes)` in [src/wow_ah/recipes/loader.py](src/wow_ah/recipes/loader.py) collects every `output_item_id` and reagent `item_id`; adding a recipe is the way to start tracking a new item.
 - **Recipe JSON files are auto-merged.** `load_all_recipes()` globs `*.json` from [src/wow_ah/recipes/data/](src/wow_ah/recipes/data/) (currently `alchemy.json`, `cooking.json`) and concatenates them. New recipe categories should be a new JSON file in that directory, not edits to existing ones.
-- **AH fee** is the single constant `AH_FEE_RATE = 0.05` in [src/wow_ah/services/spread_service.py](src/wow_ah/services/spread_service.py).
+- **AH fee** is the single integer constant `AH_FEE_PCT = 5` (percent) in [src/wow_ah/services/spread_service.py](src/wow_ah/services/spread_service.py); the calculation uses integer math (`price * AH_FEE_PCT // 100`) to preserve the integer-copper invariant.
 - **Temporal signal thresholds** (`MIN_DATA_POINTS=24`, `STD_MULTIPLIER=1.5`, `BUY_PERCENTILE=10`, `SELL_PERCENTILE=90`) live as module constants at the top of [src/wow_ah/services/temporal_service.py](src/wow_ah/services/temporal_service.py); tune them there.
 
 ### Error handling
 
 Exceptions raise an `AppException` subclass (`APIError`, `DataError`) with a message produced from a class-level constant in [src/wow_ah/exceptions/messages.py](src/wow_ah/exceptions/messages.py). When adding new error sites, add the template to the relevant `*ErrorMessages` class and `.format(...)` it at the raise site — do not inline literal strings.
+
+Conventions by layer:
+
+- **CLI commands are wrapped with the `_handle_errors` decorator** in [src/wow_ah/cli.py](src/wow_ah/cli.py), which catches `AppException`, prints `Error: <message>` to stderr, and exits 1. Apply it (below `@app.command()`) to every new command.
+- **Adapters never let `sqlite3.Error` escape** — `SQLiteAdapter` wraps every DB operation and re-raises as `DataError` with the `STORAGE_ERROR` template.
+- **Services distinguish skip from fail**: expected gaps (recipe missing a price, item with too little history) are skipped with a module-level `logger.warning(...)` and processing continues; data that violates an invariant (zero total quantity, unparseable timestamp, zero material cost) raises `DataError`. The CLI configures `logging.basicConfig(level=WARNING)` so these warnings reach the user.
 
 ## Notes on existing data
 

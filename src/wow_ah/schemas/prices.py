@@ -43,6 +43,13 @@ class SpreadResult:
 
 
 @dataclass
+class FetchResult:
+    """Outcome of a FetchService.fetch() call."""
+    saved: int  # snapshots saved
+    skipped_throttle: bool  # True if skipped because already fetched this hour
+
+
+@dataclass
 class TrendResult:
     """Temporal analysis result for a single item."""
     item_id: int

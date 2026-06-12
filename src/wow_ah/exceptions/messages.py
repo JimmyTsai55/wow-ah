@@ -11,3 +11,7 @@ class DataErrorMessages:
     )
     RECIPE_NOT_FOUND = "Recipe not found: {recipe_name}"
     RECIPE_FILE_INVALID = "Recipe file is invalid: {error}"
+    INVALID_TIMESTAMP = "Invalid timestamp format: {timestamp}"
+    STORAGE_ERROR = "Database error during {operation}: {error}"
+    ZERO_TOTAL_QUANTITY = "Cannot aggregate listings for item {item_id}: total quantity is 0"
+    ZERO_MATERIAL_COST = "Recipe {recipe_name} has zero material cost — reagent prices are likely stale or zero"

@@ -1,3 +1,5 @@
+import functools
+import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -7,6 +9,7 @@ from wow_ah.adapters.blizzard_adapter import BlizzardAdapter
 from wow_ah.adapters.sqlite_adapter import SQLiteAdapter
 from wow_ah.core.auth import TokenManager
 from wow_ah.core.config import get_settings
+from wow_ah.exceptions.base import AppException
 from wow_ah.export.csv_export import snapshots_to_csv
 from wow_ah.export.formatters import format_copper, format_spreads_table, format_trends_table
 from wow_ah.recipes.loader import get_watchlist_item_ids, load_all_recipes
@@ -15,9 +18,24 @@ from wow_ah.services.fetch_service import FetchService
 from wow_ah.services.spread_service import SpreadService
 from wow_ah.services.temporal_service import TemporalService
 
+logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
+
 app = typer.Typer(help="WoW Auction House arbitrage analysis tool")
 recipes_app = typer.Typer(help="Manage recipe definitions")
 app.add_typer(recipes_app, name="recipes")
+
+
+def _handle_errors(func):
+    """Wrap a CLI command so AppException becomes a clean stderr message + exit 1."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except AppException as e:
+            typer.echo(f"Error: {e.message}", err=True)
+            raise typer.Exit(code=1)
+    return wrapper
+
 
 def _get_store() -> SQLiteAdapter:
     settings = get_settings()
@@ -45,6 +63,7 @@ def _get_market() -> BlizzardAdapter:
 
 
 @app.command()
+@_handle_errors
 def fetch():
     """Fetch commodity prices from Blizzard API and store to database."""
     store = _get_store()
@@ -53,15 +72,18 @@ def fetch():
     watchlist = get_watchlist_item_ids(recipes)
 
     service = FetchService(market_data=market, price_store=store, watchlist=watchlist)
-    count = service.fetch()
+    result = service.fetch()
 
-    if count == 0:
-        typer.echo("No new data (already fetched this hour). Skipped.")
+    if result.skipped_throttle:
+        typer.echo("Throttled: already fetched this hour. Skipped.")
+    elif result.saved == 0:
+        typer.echo("No matching items in this fetch.")
     else:
-        typer.echo(f"Saved {count} price snapshots.")
+        typer.echo(f"Saved {result.saved} price snapshots.")
 
 
 @app.command()
+@_handle_errors
 def prices(
     item: str = typer.Option(None, help="Filter by item name (substring match)"),
     hours: int = typer.Option(24, help="Hours of history to show"),
@@ -88,6 +110,7 @@ def prices(
 
 
 @app.command()
+@_handle_errors
 def spreads(
     min_margin: float = typer.Option(0.0, help="Minimum margin % to show"),
 ):
@@ -106,6 +129,7 @@ def spreads(
 
 
 @app.command()
+@_handle_errors
 def trends(
     item: str = typer.Option(None, help="Filter by item name"),
     days: int = typer.Option(7, help="Days of history for analysis"),
@@ -131,6 +155,7 @@ def trends(
 
 
 @app.command()
+@_handle_errors
 def export(
     days: int = typer.Option(30, help="Days of history to export"),
     output: str = typer.Option("data/exports/prices.csv", help="Output file path"),
@@ -158,6 +183,7 @@ def export(
 
 
 @recipes_app.command("list")
+@_handle_errors
 def recipes_list():
     """List loaded recipes."""
     recipes = _get_recipes()

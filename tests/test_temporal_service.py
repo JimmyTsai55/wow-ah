@@ -1,6 +1,9 @@
 import statistics
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
+from wow_ah.exceptions.base import DataError
 from wow_ah.schemas.prices import PriceSnapshot, TrendResult
 from wow_ah.services.temporal_service import TemporalService
 
@@ -95,6 +98,13 @@ def test_trend_percentile():
     assert results[0].percentile_7d == 100.0
 
 
+def test_trend_invalid_now_raises_data_error():
+    store = FakeStore({})
+    service = TemporalService(price_store=store)
+    with pytest.raises(DataError):
+        service.analyze(item_ids=[100], now="garbage-timestamp")
+
+
 def test_trend_insufficient_data():
     end = datetime(2026, 4, 10, 12, 0, 0, tzinfo=timezone.utc)
     snaps = _snaps_from(100, [100, 101], end)  # only 2 data points
@@ -103,3 +113,14 @@ def test_trend_insufficient_data():
 
     results = service.analyze(item_ids=[100], now="2026-04-10T12:00:00Z")
     assert len(results) == 0
+
+
+def test_trend_logs_warning_when_insufficient_history(caplog):
+    import logging
+    end = datetime(2026, 4, 10, 12, 0, 0, tzinfo=timezone.utc)
+    snaps = _snaps_from(100, [100, 101], end)
+    store = FakeStore({100: snaps})
+    service = TemporalService(price_store=store)
+    with caplog.at_level(logging.WARNING, logger="wow_ah.services.temporal_service"):
+        service.analyze(item_ids=[100], now="2026-04-10T12:00:00Z")
+    assert any("100" in r.message for r in caplog.records)
