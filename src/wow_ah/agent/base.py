@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable
 
 from wow_ah.exceptions.base import APIError
 from wow_ah.exceptions.messages import AgentErrorMessages
@@ -14,7 +14,7 @@ class Tool:
     """A callable the model may invoke. `parameters` is a JSON schema."""
     name: str
     description: str
-    parameters: dict
+    parameters: dict[str, Any]
     func: Callable[..., str]
 
 
@@ -51,6 +51,12 @@ class Agent:
         ]
 
     def run(self, user_input: str) -> str:
+        """Run the function-calling loop until the model gives a final answer.
+
+        Exceptions raised inside a tool (e.g. DataError) propagate unchanged so
+        the CLI's AppException handler can surface their message. Unknown tools
+        and exceeding MAX_TOOL_ROUNDS raise APIError.
+        """
         messages: list[dict] = [
             {"role": "system", "content": self._system_prompt},
             {"role": "user", "content": user_input},
