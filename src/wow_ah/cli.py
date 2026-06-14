@@ -17,6 +17,10 @@ from wow_ah.schemas.recipes import Recipe
 from wow_ah.services.fetch_service import FetchService
 from wow_ah.services.spread_service import SpreadService
 from wow_ah.services.temporal_service import TemporalService
+from wow_ah.agent.llm import OpenAIChatAdapter
+from wow_ah.agent.orchestrator import ADVISE_PROMPT, run_advisor
+from wow_ah.exceptions.base import APIError
+from wow_ah.exceptions.messages import AgentErrorMessages
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
 
@@ -191,3 +195,29 @@ def recipes_list():
         reagent_str = ", ".join(f"{r.name} x{r.quantity}" for r in recipe.reagents)
         typer.echo(f"  {recipe.name} -> [{recipe.output_item_id}]")
         typer.echo(f"    Reagents: {reagent_str}")
+
+
+def _run_advisor_cli(prompt: str) -> None:
+    settings = get_settings()
+    if not settings.openai_api_key:
+        raise APIError(AgentErrorMessages.MISSING_API_KEY)
+    store = _get_store()
+    recipes = _get_recipes()
+    llm = OpenAIChatAdapter(settings.openai_api_key, settings.openai_base_url or None)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    answer = run_advisor(prompt, llm=llm, store=store, recipes=recipes, settings=settings, now=now)
+    typer.echo(answer)
+
+
+@app.command()
+@_handle_errors
+def ask(question: str = typer.Argument(..., help="自然語言問題（繁體中文）")):
+    """Ask the multi-agent advisor a natural-language question."""
+    _run_advisor_cli(question)
+
+
+@app.command()
+@_handle_errors
+def advise():
+    """Generate a proactive multi-agent trading recommendation report."""
+    _run_advisor_cli(ADVISE_PROMPT)
