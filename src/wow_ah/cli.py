@@ -221,3 +221,11 @@ def ask(question: str = typer.Argument(..., help="自然語言問題（繁體中
 def advise():
     """Generate a proactive multi-agent trading recommendation report."""
     _run_advisor_cli(ADVISE_PROMPT)
+
+
+@app.command()
+@_handle_errors
+def mcp():
+    """Start the MCP server exposing wow-ah analysis tools."""
+    from wow_ah.agent.mcp_server import run_server
+    run_server()
