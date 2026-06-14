@@ -89,3 +89,16 @@ def test_adapter_wraps_openai_errors():
 
     with pytest.raises(APIError):
         adapter.complete("gpt-4.1-nano", [{"role": "user", "content": "hi"}], None)
+
+
+def test_adapter_passes_tools_to_client():
+    completion = _FakeCompletion([_FakeChoice(_FakeMessage("ok", None), "stop")])
+    completions = _FakeCompletions(completion=completion)
+    client = _FakeClient(completions)
+    adapter = OpenAIChatAdapter(client=client)
+    tools = [{"type": "function", "function": {"name": "t", "parameters": {}}}]
+
+    adapter.complete("gpt-4.1-nano", [{"role": "user", "content": "hi"}], tools)
+
+    assert "tools" in client.chat.completions.last_kwargs
+    assert client.chat.completions.last_kwargs["tools"] == tools

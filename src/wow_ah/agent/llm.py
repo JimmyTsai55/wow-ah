@@ -12,7 +12,7 @@ class OpenAIChatAdapter:
 
     def __init__(
         self,
-        api_key: str = "",
+        api_key: str | None = None,
         base_url: str | None = None,
         client=None,
     ) -> None:
@@ -37,16 +37,26 @@ class OpenAIChatAdapter:
                 AgentErrorMessages.OPENAI_ERROR.format(error=str(e))
             ) from e
 
-        choice = completion.choices[0]
-        raw_calls = choice.message.tool_calls or []
-        tool_calls = [
-            ToolCall(
-                id=tc.id,
-                name=tc.function.name,
-                arguments=json.loads(tc.function.arguments or "{}"),
+        if not completion.choices:
+            raise APIError(
+                AgentErrorMessages.OPENAI_ERROR.format(error="response contained no choices")
             )
-            for tc in raw_calls
-        ]
+
+        choice = completion.choices[0]
+        tool_calls = []
+        for tc in choice.message.tool_calls or []:
+            try:
+                arguments = json.loads(tc.function.arguments or "{}")
+            except json.JSONDecodeError as e:
+                raise APIError(
+                    AgentErrorMessages.OPENAI_ERROR.format(
+                        error=f"invalid tool-call arguments JSON: {e}"
+                    )
+                ) from e
+            tool_calls.append(
+                ToolCall(id=tc.id, name=tc.function.name, arguments=arguments)
+            )
+
         return LLMResponse(
             content=choice.message.content,
             tool_calls=tool_calls,
