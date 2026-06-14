@@ -20,13 +20,16 @@ uv run wow-ah spreads              # show recipe profit margins (sorted desc)
 uv run wow-ah trends               # show MA/std/percentile-based BUY/SELL signals
 uv run wow-ah export               # dump price history to data/exports/prices.csv
 uv run wow-ah recipes list         # list loaded recipes
+uv run wow-ah ask "<問題>"          # 多 agent 問答（需 OPENAI_API_KEY）
+uv run wow-ah advise               # 主動產生交易建議報告
+uv run wow-ah mcp                  # 啟動 MCP server 暴露分析工具
 
 uv run pytest                      # full test suite (config in pyproject.toml; src on path)
 uv run pytest tests/test_spread_service.py::test_name   # single test
 uv run pytest --cov=wow_ah         # coverage (pytest-cov is in dev deps)
 ```
 
-A `.env` file with `BLIZZARD_CLIENT_ID` / `BLIZZARD_CLIENT_SECRET` / `BLIZZARD_REGION` (default `us`) is required for any command that calls the live API (i.e. `fetch`). Other commands only read the local SQLite DB at `data/wow_ah.db` (overridable via `DB_PATH`).
+A `.env` file with `BLIZZARD_CLIENT_ID` / `BLIZZARD_CLIENT_SECRET` / `BLIZZARD_REGION` (default `us`) is required for any command that calls the live API (i.e. `fetch`). Other commands only read the local SQLite DB at `data/wow_ah.db` (overridable via `DB_PATH`). `OPENAI_API_KEY` is additionally required for `ask` / `advise`; each agent's model can be overridden via `WOW_AH_ORCHESTRATOR_MODEL` / `WOW_AH_RECIPE_MODEL` / `WOW_AH_TREND_MODEL` / `WOW_AH_RISK_MODEL` (default `gpt-4.1-nano`, or set globally via `OPENAI_DEFAULT_MODEL`).
 
 ## Architecture
 
@@ -34,6 +37,7 @@ Dependency direction is enforced by layer. A layer may depend only on the layers
 
 | Layer | Path | Responsibility | Can depend on |
 |---|---|---|---|
+| Agent | [src/wow_ah/agent/](src/wow_ah/agent/) | OpenAI 多 agent 協作（orchestrator + 配方/趨勢/風險專家）、確定性新鮮度關卡、CLI/MCP 工具 | services, adapters, recipes, schemas, core, protocols, openai/mcp SDK |
 | CLI | [src/wow_ah/cli.py](src/wow_ah/cli.py) | Typer command wiring; assembles store + market + recipes and calls services | services, adapters, recipes, export, schemas |
 | Services | [src/wow_ah/services/](src/wow_ah/services/) | All business logic (fetch / spread / temporal) | protocols, schemas |
 | Protocols | [src/wow_ah/protocols/](src/wow_ah/protocols/) | `MarketDataProtocol`, `PriceStoreProtocol` — only abstraction layer | schemas only |
