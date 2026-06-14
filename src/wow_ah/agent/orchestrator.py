@@ -7,6 +7,7 @@ from wow_ah.agent.specialists import (
 )
 from wow_ah.core.config import Settings
 from wow_ah.protocols.llm import LLMProtocol
+from wow_ah.protocols.price_store import PriceStoreProtocol
 from wow_ah.schemas.recipes import Recipe
 
 _ORCHESTRATOR_PROMPT = (
@@ -39,7 +40,7 @@ def _consult_tool(name: str, description: str, specialist: Agent) -> Tool:
 
 
 def build_orchestrator(
-    *, llm: LLMProtocol, store, recipes: list[Recipe], settings: Settings, now: str
+    *, llm: LLMProtocol, store: PriceStoreProtocol, recipes: list[Recipe], settings: Settings, now: str
 ) -> Agent:
     recipe_agent = build_recipe_agent(
         llm=llm, store=store, recipes=recipes, model=settings.model_for("recipe")
@@ -69,7 +70,7 @@ def run_advisor(
     prompt: str,
     *,
     llm: LLMProtocol,
-    store,
+    store: PriceStoreProtocol,
     recipes: list[Recipe],
     settings: Settings,
     now: str,

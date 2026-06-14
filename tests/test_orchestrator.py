@@ -54,3 +54,12 @@ def test_orchestrator_consults_specialist_and_uses_models():
 
 def test_advise_prompt_is_nonempty():
     assert "建議" in ADVISE_PROMPT
+
+
+def test_stale_timestamp_short_circuits_before_llm():
+    store = FakeStore(last="2026-06-13T00:00:00Z")  # ~36h old, exceeds 6h threshold
+    llm = FakeLLM([])  # must never be called
+    out = run_advisor("哪個配方最賺？", llm=llm, store=store, recipes=[],
+                      settings=_settings(), now="2026-06-14T12:00:00Z")
+    assert "fetch" in out.lower()
+    assert llm.calls == []
