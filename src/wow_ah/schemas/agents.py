@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -6,7 +7,7 @@ class ToolCall:
     """A single tool/function call requested by the model."""
     id: str
     name: str
-    arguments: dict
+    arguments: dict[str, Any]
 
 
 @dataclass

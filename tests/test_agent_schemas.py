@@ -7,8 +7,9 @@ def test_tool_call_holds_parsed_arguments():
 
 
 def test_llm_response_defaults_to_no_tool_calls():
-    resp = LLMResponse(content="hi", tool_calls=[], finish_reason="stop")
+    resp = LLMResponse(content="hi")
     assert resp.tool_calls == []
+    assert resp.finish_reason == "stop"
     assert resp.content == "hi"
 
 
