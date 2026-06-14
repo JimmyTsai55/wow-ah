@@ -1,7 +1,7 @@
+import asyncio
 import json
 
 from wow_ah.agent.mcp_server import build_server
-from wow_ah.agent.tools import spreads_json
 from wow_ah.schemas.prices import PriceSnapshot
 from wow_ah.schemas.recipes import Recipe, Reagent
 
@@ -28,7 +28,21 @@ def test_build_server_returns_named_fastmcp():
 
 
 def test_shared_tool_logic_used_by_mcp():
+    """Invoke get_spreads through the MCP server to verify tool wiring in build_server."""
     store = FakeStore({1: PriceSnapshot(1, "2026-06-14T12:00:00Z", 100),
                        100: PriceSnapshot(100, "2026-06-14T12:00:00Z", 5000)})
-    out = json.loads(spreads_json(store, [_recipe()], 0.0))
+    server = build_server(store=store, recipes=[_recipe()], now="2026-06-14T12:00:00Z")
+
+    # call_tool is async and returns (list[ContentBlock], dict); ContentBlock has a .text attr
+    raw = asyncio.run(server.call_tool("get_spreads", {}))
+
+    # Robustly extract the JSON text regardless of whether raw is a tuple or a list
+    content_blocks = raw[0] if isinstance(raw, (tuple, list)) else [raw]
+    text = next(
+        (block.text for block in content_blocks if hasattr(block, "text")),
+        None,
+    )
+    assert text is not None, f"No text block found in call_tool result: {raw!r}"
+
+    out = json.loads(text)
     assert out[0]["recipe_name"] == "Flask"
