@@ -43,7 +43,8 @@ def build_orchestrator(
     *, llm: LLMProtocol, store: PriceStoreProtocol, recipes: list[Recipe], settings: Settings, now: str
 ) -> Agent:
     recipe_agent = build_recipe_agent(
-        llm=llm, store=store, recipes=recipes, model=settings.model_for("recipe")
+        llm=llm, store=store, recipes=recipes, model=settings.model_for(
+            "recipe")
     )
     trend_agent = build_trend_agent(
         llm=llm, store=store, recipes=recipes, model=settings.model_for("trend"), now=now
@@ -53,7 +54,8 @@ def build_orchestrator(
     )
 
     tools = [
-        _consult_tool("consult_recipe_analyst", "請配方利潤分析師分析配方淨利。", recipe_agent),
+        _consult_tool("consult_recipe_analyst",
+                      "請配方利潤分析師分析配方淨利。", recipe_agent),
         _consult_tool("consult_trend_analyst", "請價格趨勢分析師分析買賣時機。", trend_agent),
         _consult_tool("consult_risk_reviewer", "請風險審查員檢查建議是否可靠。", risk_agent),
     ]

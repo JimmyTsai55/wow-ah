@@ -1,0 +1,114 @@
+{
+    "recipes": [
+        {
+            "name": "Flask of Alchemical Chaos",
+            "output_item_id": 212283,
+            "output_quantity": 1,
+            "reagents": [
+                {
+                    "item_id": 210796,
+                    "name": "Mycobloom",
+                    "quantity": 10
+                },
+                {
+                    "item_id": 210799,
+                    "name": "Luredrop",
+                    "quantity": 5
+                },
+                {
+                    "item_id": 210802,
+                    "name": "Aqirite",
+                    "quantity": 2
+                }
+            ]
+        },
+        {
+            "name": "Algari Healing Potion",
+            "output_item_id": 211954,
+            "output_quantity": 1,
+            "reagents": [
+                {
+                    "item_id": 210796,
+                    "name": "Mycobloom",
+                    "quantity": 5
+                },
+                {
+                    "item_id": 210930,
+                    "name": "Blessing Blossom",
+                    "quantity": 3
+                }
+            ]
+        },
+        {
+            "name": "Algari Mana Potion",
+            "output_item_id": 211955,
+            "output_quantity": 1,
+            "reagents": [
+                {
+                    "item_id": 210799,
+                    "name": "Luredrop",
+                    "quantity": 5
+                },
+                {
+                    "item_id": 210930,
+                    "name": "Blessing Blossom",
+                    "quantity": 3
+                }
+            ]
+        },
+        {
+            "name": "Phial of Concentrated Ingenuity",
+            "output_item_id": 212284,
+            "output_quantity": 1,
+            "reagents": [
+                {
+                    "item_id": 210796,
+                    "name": "Mycobloom",
+                    "quantity": 8
+                },
+                {
+                    "item_id": 210800,
+                    "name": "Arathor's Spear",
+                    "quantity": 6
+                },
+                {
+                    "item_id": 210802,
+                    "name": "Aqirite",
+                    "quantity": 1
+                }
+            ]
+        },
+        {
+            "name": "Cauldron of the Potion Master",
+            "output_item_id": 212285,
+            "output_quantity": 1,
+            "reagents": [
+                {
+                    "item_id": 210796,
+                    "name": "Mycobloom",
+                    "quantity": 20
+                },
+                {
+                    "item_id": 210799,
+                    "name": "Luredrop",
+                    "quantity": 15
+                },
+                {
+                    "item_id": 210800,
+                    "name": "Arathor's Spear",
+                    "quantity": 15
+                },
+                {
+                    "item_id": 210930,
+                    "name": "Blessing Blossom",
+                    "quantity": 10
+                },
+                {
+                    "item_id": 210802,
+                    "name": "Aqirite",
+                    "quantity": 5
+                }
+            ]
+        }
+    ]
+}
