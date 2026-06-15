@@ -1,0 +1,9 @@
+# Runtime dependencies for wow-ah.
+# Source of truth is pyproject.toml; this file mirrors it for pip/conda users.
+# Install: python -m pip install -r requirements.txt
+httpx>=0.28
+typer>=0.15
+pydantic-settings>=2.7
+tabulate>=0.9
+openai>=1.60
+mcp>=1.2
