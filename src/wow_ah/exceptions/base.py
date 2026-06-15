@@ -8,7 +8,7 @@ class AppException(Exception):
 
 
 class APIError(AppException):
-    """Blizzard API related errors."""
+    """External API errors (Blizzard, OpenAI) and agent orchestration errors."""
 
 
 class DataError(AppException):

@@ -15,3 +15,12 @@ class DataErrorMessages:
     STORAGE_ERROR = "Database error during {operation}: {error}"
     ZERO_TOTAL_QUANTITY = "Cannot aggregate listings for item {item_id}: total quantity is 0"
     ZERO_MATERIAL_COST = "Recipe {recipe_name} has zero material cost — reagent prices are likely stale or zero"
+
+
+class AgentErrorMessages:
+    MISSING_API_KEY = "OPENAI_API_KEY is not set. Add it to your .env file."
+    OPENAI_ERROR = "OpenAI API call failed: {error}"
+    MAX_ROUNDS_EXCEEDED = (
+        "Agent '{agent}' exceeded the maximum of {limit} tool-call rounds"
+    )
+    UNKNOWN_TOOL = "Agent '{agent}' requested an unknown tool: {tool}"
